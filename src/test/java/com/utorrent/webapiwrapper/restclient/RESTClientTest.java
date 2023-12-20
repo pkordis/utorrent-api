@@ -18,7 +18,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.net.*;
 
 import static org.assertj.core.api.StrictAssertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -42,8 +42,8 @@ public class RESTClientTest {
     private RESTClient client;
 
     @Before
-    public void setUp() {
-        client = new RESTClient(httpClient, connectionParams);
+    public void setUp() throws URISyntaxException {
+        client = new RESTClient(connectionParams);
     }
 
 
@@ -108,7 +108,7 @@ public class RESTClientTest {
         when(entity.getContent())
                 .thenReturn(new ByteArrayInputStream("test".getBytes()));
 
-        assertThatThrownBy(() -> client.get(Request.builder().setDestination(URI.create("127.0.0.1")).create()))
+        assertThatThrownBy(() -> client.get(Request.builder().uri(URI.create("127.0.0.1")).build()))
                 .isInstanceOf(exception);
     }
 }

@@ -114,7 +114,7 @@ public class MessageParser {
         if (isAtLeastBuild221(build)) {
             torrentBuilder
                     .statusMessage(TORRENT_STATUS_MESSAGE.getAsString(jsonTorrentMessage))
-                    .streamId(TORRENT_STREAM_ID.getAsInt(jsonTorrentMessage))
+                    .streamId(TORRENT_STREAM_ID.getAsString(jsonTorrentMessage))
                     .dateAdded(Instant.ofEpochSecond(TORRENT_DATE_ADDED.getAsLong(jsonTorrentMessage)))
                     .downloadURL(TORRENT_DOWNLOAD_URL.getAsString(jsonTorrentMessage))
                     .rssFeedURL(TORRENT_RSS_FEED_URL.getAsString(jsonTorrentMessage))

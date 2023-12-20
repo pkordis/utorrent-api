@@ -3,7 +3,8 @@ package com.utorrent.webapiwrapper.restclient;
 import com.google.common.base.Throwables;
 import com.utorrent.webapiwrapper.restclient.exceptions.*;
 import com.utorrent.webapiwrapper.utils.IOUtils;
-import org.apache.http.HttpResponse;
+import lombok.*;
+import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -22,22 +23,28 @@ import org.apache.http.impl.client.HttpClients;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.*;
+import java.util.concurrent.atomic.*;
+import java.util.function.Consumer;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
+@Getter
 public class RESTClient implements Closeable {
-
     private final CloseableHttpClient client;
     private final HttpClientContext httpClientContext;
     private final RequestConfig requestConfig;
+    private final URI serverURI;
 
-    public RESTClient(CloseableHttpClient client, ConnectionParams params) {
+    public RESTClient(final CloseableHttpClient client, final ConnectionParams params, final URI serverURI) {
         requireNonNull(params, "Connection Parameters cannot be null");
         requireNonNull(client, "Client cannot be null");
 
         this.client = client;
+        this.serverURI = serverURI;
 
         this.httpClientContext = HttpClientContext.create();
         if (nonNull(params.getCredentials())) {
@@ -59,8 +66,17 @@ public class RESTClient implements Closeable {
         requestConfig = requestConfigBuilder.build();
     }
 
-    public RESTClient(ConnectionParams params) {
-        this(HttpClients.createDefault(), params);
+    public RESTClient(final ConnectionParams params) throws URISyntaxException {
+        this(
+            HttpClients.createDefault(),
+            params,
+            new URIBuilder()
+                .setScheme(params.getScheme())
+                .setHost(params.getHost())
+                .setPort(params.getPort())
+                .setPath("/gui/")
+                .build()
+            );
     }
 
     public String post(Request request) {
@@ -81,13 +97,14 @@ public class RESTClient implements Closeable {
     }
 
     public String get(Request request) {
-
-        URIBuilder uriBuilder = new URIBuilder(request.getUri());
+        final URIBuilder uriBuilder = new URIBuilder(request.getUri());
+        final RequestBuilder requestBuilder = RequestBuilder.get();
         request.getParams().forEach(param -> uriBuilder.addParameter(param.getName(), param.getValue()));
+        request.getHeaders().forEach(requestBuilder::addHeader);
         HttpUriRequest httpUriRequest = null;
 
         try {
-            httpUriRequest = RequestBuilder.get()
+            httpUriRequest = requestBuilder
                     .setUri(uriBuilder.build())
                     .setConfig(requestConfig)
                     .build();
@@ -98,16 +115,21 @@ public class RESTClient implements Closeable {
         return executeVerb(httpUriRequest);
     }
 
-    private String executeVerb(HttpUriRequest httpRequest) {
-        try (CloseableHttpResponse httpResponse = client.execute(httpRequest, httpClientContext)) {
+    private String executeVerb(final HttpUriRequest httpRequest, final Consumer<HttpResponse> responseConsumer) {
+        try (final CloseableHttpResponse httpResponse = client.execute(httpRequest, httpClientContext)) {
             String message = IOUtils.toString(httpResponse.getEntity().getContent());
             validateResponse(httpResponse);
+            responseConsumer.accept(httpResponse);
             return message;
         } catch (ClientRequestException e) {
             throw e;
         } catch (Exception e) {
             throw new RESTException("Impossible to execute request " + httpRequest.getMethod(), e);
         }
+    }
+
+    private String executeVerb(final HttpUriRequest httpRequest) {
+        return executeVerb(httpRequest, response -> {});
     }
 
     @Override
@@ -134,5 +156,29 @@ public class RESTClient implements Closeable {
                     throw new ClientRequestException(response.getStatusLine());
             }
         }
+    }
+
+    public AuthorizationData authenticate() {
+        final HttpUriRequest httpUriRequest = RequestBuilder
+            .get()
+            .setUri(serverURI.resolve("token.html"))
+            .setConfig(requestConfig)
+            .build();
+        final AtomicReference<String> guidTokenHolder = new AtomicReference<>();
+        final String token = executeVerb(
+            httpUriRequest,
+            response -> {
+                final String guid = Arrays
+                    .stream(response.getHeaders("Set-Cookie"))
+                    .findFirst().flatMap(header -> Arrays
+                        .stream(header.getElements())
+                        .filter(headerElement -> headerElement.getName().equals("GUID"))
+                        .map(HeaderElement::getValue)
+                        .findFirst())
+                    .orElse(null);
+                guidTokenHolder.set(guid);
+            }
+        ).replaceAll("<[^>]*>", "");
+        return new AuthorizationData(token, "GUID=" + guidTokenHolder.get());
     }
 }

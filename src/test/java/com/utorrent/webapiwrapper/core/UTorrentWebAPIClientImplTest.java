@@ -44,6 +44,20 @@ public class UTorrentWebAPIClientImplTest {
 
     private URI serverURI;
 
+    @Test
+    public void contextLoads() {
+
+        ConnectionParams connectionParams = ConnectionParams.builder()
+            .withScheme("http")
+            .withCredentials("tpb-bot", "tpb-bot")
+            .enableAuthentication(true)
+            .withAddress("gimli", 13370)
+            .withTimeout(1500)
+            .create();
+        UTorrentWebAPIClient client = UTorrentWebAPIClient.getClient(connectionParams);
+        Set<Torrent> allTorrents = client.getAllTorrents();
+    }
+
     @Before
     public void setUp() throws Exception {
         ConnectionParams connectionParams = ConnectionParams.builder()
@@ -59,8 +73,8 @@ public class UTorrentWebAPIClientImplTest {
                 .setPort(connectionParams.getPort())
                 .setPath("/gui/").build();
 
-        client = new UTorrentWebAPIClientImpl(restClient, connectionParams, parser);
-        when(restClient.get(builder().setDestination(serverURI.resolve("token.html")).create())).thenReturn(TOKEN_VALUE);
+        client = new UTorrentWebAPIClientImpl(connectionParams, parser);
+        when(restClient.get(builder().uri(serverURI.resolve("token.html")).build())).thenReturn(TOKEN_VALUE);
     }
 
     @Test

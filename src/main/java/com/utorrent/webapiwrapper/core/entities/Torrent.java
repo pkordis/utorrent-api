@@ -34,7 +34,7 @@ public class Torrent {
     private long availability;
     private long torrentQueueOrder;
     private long remaining;
-    private int streamId;
+    private String streamId;
     private String statusMessage;
     private final Instant dateAdded;
     private final Instant dateCompleted;

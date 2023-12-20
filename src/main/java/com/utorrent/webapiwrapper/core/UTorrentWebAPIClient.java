@@ -342,6 +342,6 @@ public interface UTorrentWebAPIClient extends Closeable {
      */
     static UTorrentWebAPIClient getClient(ConnectionParams connectionParams) {
 
-        return new UTorrentWebAPIClientImpl(new RESTClient(connectionParams), connectionParams, new MessageParser());
+        return new UTorrentWebAPIClientImpl(connectionParams, new MessageParser());
     }
 }
