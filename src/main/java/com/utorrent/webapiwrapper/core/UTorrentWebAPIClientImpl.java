@@ -13,10 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import static com.utorrent.webapiwrapper.core.Action.*;
@@ -46,8 +43,21 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
     private AuthorizationData authorizationData;
 
     @SneakyThrows
-    UTorrentWebAPIClientImpl(ConnectionParams connectionParams, MessageParser messageParser) {
+    UTorrentWebAPIClientImpl(
+        final ConnectionParams connectionParams,
+        final MessageParser messageParser
+    ) {
         this.client = new RESTClient(connectionParams);
+        this.serverURI = client.getServerURI();
+        this.messageParser = messageParser;
+        torrentsCache = new TorrentsCache();
+    }
+
+    UTorrentWebAPIClientImpl(
+        final MessageParser messageParser,
+        final RESTClient client
+    ) {
+        this.client = client;
         this.serverURI = client.getServerURI();
         this.messageParser = messageParser;
         torrentsCache = new TorrentsCache();
@@ -82,10 +92,10 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
     }
 
     @Override
-    public RequestResult addTorrent(String url) {
-        List<Request.QueryParam> params = new ArrayList<>();
-        params.add(new Request.QueryParam(URL_PARAM_NAME, url));
-        String result = executeAction(ADD_URL, ImmutableList.of(), params);
+    public RequestResult addTorrent(final MagnetLink magnetLink) {
+        final List<Request.QueryParam> params = new ArrayList<>();
+        params.add(new Request.QueryParam(URL_PARAM_NAME, magnetLink.asUrlDecodedString()));
+        final String result = executeAction(ADD_URL, Collections.emptyList(), params);
         return getResult(result);
     }
 

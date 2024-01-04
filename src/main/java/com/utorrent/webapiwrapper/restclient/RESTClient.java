@@ -66,9 +66,9 @@ public class RESTClient implements Closeable {
         requestConfig = requestConfigBuilder.build();
     }
 
-    public RESTClient(final ConnectionParams params) throws URISyntaxException {
+    public RESTClient(final CloseableHttpClient client, final ConnectionParams params) throws URISyntaxException {
         this(
-            HttpClients.createDefault(),
+            client,
             params,
             new URIBuilder()
                 .setScheme(params.getScheme())
@@ -76,7 +76,11 @@ public class RESTClient implements Closeable {
                 .setPort(params.getPort())
                 .setPath("/gui/")
                 .build()
-            );
+        );
+    }
+
+    public RESTClient(final ConnectionParams params) throws URISyntaxException {
+        this(HttpClients.createDefault(), params);
     }
 
     public String post(Request request) {

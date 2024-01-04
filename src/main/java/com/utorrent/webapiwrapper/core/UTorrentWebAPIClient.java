@@ -26,11 +26,11 @@ public interface UTorrentWebAPIClient extends Closeable {
     /**
      * Add a torrent to uTorrent
      *
-     * @param url the torrent url to add
+     * @param magnetLink The torrent's magnet-link to add
      * @return a result indicating whether the call completed with success or a fail
      * @throws IOException
      */
-    RequestResult addTorrent(String url) throws IOException;
+    RequestResult addTorrent(MagnetLink magnetLink) throws IOException;
 
     /**
      * Add a torrent to uTorrent
