@@ -52,6 +52,19 @@ public interface UTorrentWebAPIClient extends Closeable {
     Torrent getTorrent(String torrentHash) throws IOException;
 
     /**
+     * It queries uTorrent for the specific torrent and returns an object representing
+     * all the information related to the torrent. If the torrent is not found the same
+     * request is retries as many times as specified with a delay provided
+     *
+     * @param torrentHash the torrent hash known to uTorrent
+     * @param delay the time in milliseconds to wait for between retries
+     * @param retries the number of times to retry
+     * @return a torrent object
+     * @throws IOException
+     */
+    Torrent getTorrent(String torrentHash, long delay, int retries) throws IOException;
+
+    /**
      * It queries uTorrent for the specific torrent files and returns a list representing
      * all the information related to the torrent files
      *

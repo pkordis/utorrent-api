@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.*;
 
 import static com.utorrent.webapiwrapper.core.Action.*;
 import static com.utorrent.webapiwrapper.core.entities.RequestResult.FAIL;
@@ -134,6 +134,30 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
     public Torrent getTorrent(String torrentHash) {
         updateTorrentCache();
         return torrentsCache.getTorrent(torrentHash);
+    }
+
+    @Override
+    public Torrent getTorrent(final String torrentHash, final long delay, final int retries) {
+        Optional<Torrent> torrentMatched;
+        int timesRetried = -1;
+        do {
+            torrentMatched = this
+                .getAllTorrents()
+                .stream()
+                .filter(torrent -> torrent.getHash().equals(torrentHash))
+                .findFirst();
+            ++timesRetried;
+            if (torrentMatched.isPresent() || timesRetried == retries) {
+                break;
+            } else {
+                try {
+                    Thread.sleep(delay);
+                } catch (final InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } while (true);
+        return torrentMatched.orElseThrow(() -> new RuntimeException("Condition not met within time window"));
     }
 
     @Override
