@@ -60,7 +60,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
         this.client = new RESTClient(connectionParams);
         this.serverURI = client.getServerURI();
         this.messageParser = messageParser;
-        torrentsCache = new TorrentsCache();
+        this.torrentsCache = new TorrentsCache();
     }
 
     UTorrentWebAPIClientImpl(
@@ -70,7 +70,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
         this.client = client;
         this.serverURI = client.getServerURI();
         this.messageParser = messageParser;
-        torrentsCache = new TorrentsCache();
+        this.torrentsCache = new TorrentsCache();
     }
 
     private AuthorizationData getAuthorizationData() {

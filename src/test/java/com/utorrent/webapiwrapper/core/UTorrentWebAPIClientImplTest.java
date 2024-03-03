@@ -13,10 +13,7 @@ import com.utorrent.webapiwrapper.restclient.ConnectionParams;
 import com.utorrent.webapiwrapper.restclient.RESTClient;
 import com.utorrent.webapiwrapper.restclient.Request;
 import com.utorrent.webapiwrapper.restclient.exceptions.BadRequestException;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.StatusLine;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.message.BasicStatusLine;
+import org.apache.hc.core5.net.URIBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,9 +81,8 @@ class UTorrentWebAPIClientImplTest {
     void testInvokeWithAuthentication() {
         File torrentFile = new File("fakePath");
         when(restClient.post(any())).thenReturn(BUILD_STRING);
-        StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("protocol", 0, 1), 5, "reason");
         client.addTorrent(torrentFile);
-        when(restClient.post(any())).thenThrow(new BadRequestException(statusLine));
+        when(restClient.post(any())).thenThrow(new BadRequestException(5, "reason"));
         assertThatThrownBy(() -> client.addTorrent(torrentFile))
                 .isInstanceOf(UTorrentAuthException.class)
                 .hasRootCauseInstanceOf(BadRequestException.class)

@@ -1,7 +1,10 @@
 package com.utorrent.webapiwrapper.restclient;
 
-import lombok.*;
-import org.apache.http.entity.ContentType;
+import lombok.Builder;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.Singular;
+import org.apache.hc.core5.http.ContentType;
 
 import java.io.File;
 import java.net.URI;

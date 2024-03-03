@@ -15,7 +15,8 @@
         <gson.version>2.3.1</gson.version>
         <spring-boot-starter-logging.version>3.2.0</spring-boot-starter-logging.version>
         <mockito.version>2.0.2-beta</mockito.version>
-        <apache.httpcomponent.version>4.4.1</apache.httpcomponent.version>
+        <apache.httpcomponent.client5.version>5.3.1</apache.httpcomponent.client5.version>
+        <apache.httpcomponent.core5.version>5.3.1</apache.httpcomponent.core5.version>
         <hamcrest.version>2.2</hamcrest.version>
         <assertj.version>3.24.2</assertj.version>
     </properties>
@@ -28,20 +29,20 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${apache.httpcomponent.version}</version>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${apache.httpcomponent.client5.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>${apache.httpcomponent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpmime</artifactId>
-            <version>${apache.httpcomponent.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.httpcomponents.client5</groupId>-->
+<!--            <artifactId>httpcore5</artifactId>-->
+<!--            <version>${apache.httpcomponent.client5.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.httpcomponents.client5</groupId>-->
+<!--            <artifactId>httpmime5</artifactId>-->
+<!--            <version>${apache.httpcomponent.client5.version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

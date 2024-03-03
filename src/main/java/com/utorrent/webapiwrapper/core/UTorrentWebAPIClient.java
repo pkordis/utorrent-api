@@ -1,10 +1,15 @@
 package com.utorrent.webapiwrapper.core;
 
-import com.utorrent.webapiwrapper.core.entities.*;
+import com.utorrent.webapiwrapper.core.entities.ClientSettings;
+import com.utorrent.webapiwrapper.core.entities.MagnetLink;
+import com.utorrent.webapiwrapper.core.entities.Priority;
+import com.utorrent.webapiwrapper.core.entities.RequestResult;
+import com.utorrent.webapiwrapper.core.entities.Torrent;
+import com.utorrent.webapiwrapper.core.entities.TorrentFileList;
+import com.utorrent.webapiwrapper.core.entities.TorrentProperties;
 import com.utorrent.webapiwrapper.restclient.ConnectionParams;
-import com.utorrent.webapiwrapper.restclient.RESTClient;
 import com.utorrent.webapiwrapper.restclient.Request;
-import org.apache.http.entity.ContentType;
+import org.apache.hc.core5.http.ContentType;
 
 import java.io.Closeable;
 import java.io.File;
