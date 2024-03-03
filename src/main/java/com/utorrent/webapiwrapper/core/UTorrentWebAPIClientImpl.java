@@ -1,20 +1,31 @@
 package com.utorrent.webapiwrapper.core;
 
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.utorrent.webapiwrapper.core.entities.*;
-import com.utorrent.webapiwrapper.restclient.*;
-import com.utorrent.webapiwrapper.restclient.Request.*;
+import com.utorrent.webapiwrapper.core.entities.ClientSettings;
+import com.utorrent.webapiwrapper.core.entities.MagnetLink;
+import com.utorrent.webapiwrapper.core.entities.Priority;
+import com.utorrent.webapiwrapper.core.entities.RequestResult;
+import com.utorrent.webapiwrapper.core.entities.Torrent;
+import com.utorrent.webapiwrapper.core.entities.TorrentFileList;
+import com.utorrent.webapiwrapper.core.entities.TorrentProperties;
+import com.utorrent.webapiwrapper.restclient.AuthorizationData;
+import com.utorrent.webapiwrapper.restclient.ConnectionParams;
+import com.utorrent.webapiwrapper.restclient.RESTClient;
+import com.utorrent.webapiwrapper.restclient.Request;
+import com.utorrent.webapiwrapper.restclient.Request.FilePart;
+import com.utorrent.webapiwrapper.restclient.Request.QueryParam;
+import com.utorrent.webapiwrapper.restclient.Request.RequestBuilder;
 import com.utorrent.webapiwrapper.restclient.exceptions.BadRequestException;
-import lombok.*;
-import org.apache.http.client.utils.URIBuilder;
+import lombok.SneakyThrows;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
 import static com.utorrent.webapiwrapper.core.Action.*;
 import static com.utorrent.webapiwrapper.core.entities.RequestResult.FAIL;
@@ -23,7 +34,6 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
-
     static final String ACTION_QUERY_PARAM_NAME = "action";
     static final String TOKEN_PARAM_NAME = "token";
     static final String URL_PARAM_NAME = "s";
@@ -162,24 +172,24 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public Set<TorrentFileList> getTorrentFiles(List<String> torrentHashes) {
-        String torrentFilesJsonMessage = executeAction(GET_FILES, torrentHashes, ImmutableList.of());
+        String torrentFilesJsonMessage = executeAction(GET_FILES, torrentHashes, List.of());
         return messageParser.parseAsTorrentFileList(torrentFilesJsonMessage);
     }
 
     @Override
     public Optional<TorrentFileList> getTorrentFiles(String torrentHash) {
-        return getTorrentFiles(ImmutableList.of(torrentHash)).stream().findFirst();
+        return getTorrentFiles(List.of(torrentHash)).stream().findFirst();
     }
 
     @Override
     public Set<TorrentProperties> getTorrentProperties(List<String> torrentHashes) {
-        String jsonTorrentPropertiesMessage = executeAction(GET_PROP, torrentHashes, ImmutableList.of());
+        String jsonTorrentPropertiesMessage = executeAction(GET_PROP, torrentHashes, List.of());
         return messageParser.parseAsTorrentProperties(jsonTorrentPropertiesMessage);
     }
 
     @Override
     public Optional<TorrentProperties> getTorrentProperties(String torrentHash) {
-        return getTorrentProperties(ImmutableList.of(torrentHash)).stream().findFirst();
+        return getTorrentProperties(List.of(torrentHash)).stream().findFirst();
     }
 
     @Override
@@ -189,7 +199,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult startTorrent(String hash) {
-        return startTorrent(ImmutableList.of(hash));
+        return startTorrent(List.of(hash));
     }
 
     @Override
@@ -199,7 +209,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult stopTorrent(String hash) {
-        return stopTorrent(ImmutableList.of(hash));
+        return stopTorrent(List.of(hash));
     }
 
     @Override
@@ -209,7 +219,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult pauseTorrent(String hash) {
-        return pauseTorrent(ImmutableList.of(hash));
+        return pauseTorrent(List.of(hash));
     }
 
     @Override
@@ -219,7 +229,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult forceStartTorrent(String hash) {
-        return forceStartTorrent(ImmutableList.of(hash));
+        return forceStartTorrent(List.of(hash));
     }
 
     @Override
@@ -229,7 +239,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult unpauseTorrent(String hash) {
-        return unpauseTorrent(ImmutableList.of(hash));
+        return unpauseTorrent(List.of(hash));
     }
 
     @Override
@@ -239,7 +249,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult recheckTorrent(String hash) {
-        return recheckTorrent(ImmutableList.of(hash));
+        return recheckTorrent(List.of(hash));
     }
 
     @Override
@@ -249,7 +259,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult removeTorrent(String hash) {
-        return removeTorrent(ImmutableList.of(hash));
+        return removeTorrent(List.of(hash));
     }
 
     @Override
@@ -259,7 +269,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult removeDataTorrent(String hash) {
-        return removeDataTorrent(ImmutableList.of(hash));
+        return removeDataTorrent(List.of(hash));
     }
 
     @Override
@@ -269,7 +279,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult queueBottomTorrent(String hash) {
-        return queueBottomTorrent(ImmutableList.of(hash));
+        return queueBottomTorrent(List.of(hash));
     }
 
     @Override
@@ -279,7 +289,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult queueUpTorrent(String hash) {
-        return queueUpTorrent(ImmutableList.of(hash));
+        return queueUpTorrent(List.of(hash));
     }
 
     @Override
@@ -289,7 +299,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult queueDownTorrent(String hash) {
-        return queueDownTorrent(ImmutableList.of(hash));
+        return queueDownTorrent(List.of(hash));
     }
 
     @Override
@@ -299,7 +309,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult queueTopTorrent(String hash) {
-        return queueTopTorrent(ImmutableList.of(hash));
+        return queueTopTorrent(List.of(hash));
     }
 
     @Override
@@ -308,7 +318,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
         List<Request.QueryParam> params = new ArrayList<>();
         params.add(new Request.QueryParam(PRIORITY_QUERY_PARAM_NAME, String.valueOf(priority.getValue())));
         fileIndices.forEach(index -> params.add(new Request.QueryParam(FILE_INDEX_QUERY_PARAM_NAME, String.valueOf(index))));
-        return getResult(executeAction(SET_PRIORITY, ImmutableList.of(hash), params));
+        return getResult(executeAction(SET_PRIORITY, List.of(hash), params));
     }
 
     @Override
@@ -318,12 +328,12 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
 
     @Override
     public RequestResult setClientSetting(String settingName, String settingValue) {
-        return setClientSetting(ImmutableList.of(new Request.QueryParam(settingName, settingValue)));
+        return setClientSetting(List.of(new Request.QueryParam(settingName, settingValue)));
     }
 
     @Override
     public RequestResult setClientSetting(List<Request.QueryParam> settings) {
-        return getResult(executeAction(SET_SETTING, ImmutableList.of(), settings));
+        return getResult(executeAction(SET_SETTING, List.of(), settings));
     }
 
     @Override
@@ -333,11 +343,11 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
     }
 
     private RequestResult executeBaseTorrentAction(Action action, List<String> hashes) {
-        return getResult(executeAction(action, hashes, ImmutableList.of()));
+        return getResult(executeAction(action, hashes, List.of()));
     }
 
     private String executeAction(Action action) {
-        return executeAction(action, ImmutableList.of(), ImmutableList.of());
+        return executeAction(action, List.of(), List.of());
     }
 
     private String executeAction(Action action, List<String> torrentHashes, List<Request.QueryParam> queryParams) {

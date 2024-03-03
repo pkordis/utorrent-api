@@ -1,19 +1,28 @@
 package com.utorrent.webapiwrapper.core;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.utorrent.webapiwrapper.core.entities.*;
-import com.utorrent.webapiwrapper.restclient.*;
+import com.utorrent.webapiwrapper.core.entities.ClientSettings;
+import com.utorrent.webapiwrapper.core.entities.MagnetLink;
+import com.utorrent.webapiwrapper.core.entities.Priority;
+import com.utorrent.webapiwrapper.core.entities.RequestResult;
+import com.utorrent.webapiwrapper.core.entities.Torrent;
+import com.utorrent.webapiwrapper.core.entities.TorrentFileList;
+import com.utorrent.webapiwrapper.core.entities.TorrentListSnapshot;
+import com.utorrent.webapiwrapper.core.entities.TorrentProperties;
+import com.utorrent.webapiwrapper.restclient.AuthorizationData;
+import com.utorrent.webapiwrapper.restclient.ConnectionParams;
+import com.utorrent.webapiwrapper.restclient.RESTClient;
+import com.utorrent.webapiwrapper.restclient.Request;
 import com.utorrent.webapiwrapper.restclient.exceptions.BadRequestException;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicStatusLine;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
 import java.net.URI;
@@ -21,12 +30,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.utorrent.webapiwrapper.core.UTorrentWebAPIClientImpl.URL_PARAM_NAME;
-import static com.utorrent.webapiwrapper.restclient.Request.*;
+import static com.utorrent.webapiwrapper.restclient.Request.FilePart;
+import static com.utorrent.webapiwrapper.restclient.Request.QueryParam;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith({
     MockitoExtension.class
@@ -90,7 +107,7 @@ class UTorrentWebAPIClientImplTest {
         Request request = argumentCaptor.getValue();
         FilePart filePart = new FilePart("torrent_file", torrentFile, UTorrentWebAPIClient.APPLICATION_X_BIT_TORRENT_CONTENT_TYPE);
 
-        validateRequest(Action.ADD_FILE, request, ImmutableList.of(), ImmutableList.of(filePart));
+        validateRequest(Action.ADD_FILE, request, List.of(), List.of(filePart));
     }
 
     @Test
@@ -123,7 +140,7 @@ class UTorrentWebAPIClientImplTest {
         final QueryParam expectedURL = new QueryParam(URL_PARAM_NAME, magnetLink.asUrlDecodedString());
 
         Request actualRequest = argumentCaptor.getValue();
-        validateRequest(Action.ADD_URL, actualRequest, ImmutableList.of(expectedURL));
+        validateRequest(Action.ADD_URL, actualRequest, List.of(expectedURL));
     }
 
     @Test
@@ -140,10 +157,10 @@ class UTorrentWebAPIClientImplTest {
         Request requestToValidate = argumentCaptor.getValue();
         assertThat(requestToValidate).isNotNull();
 
-        ImmutableList<QueryParam> queryParamsToCompare = ImmutableList.<QueryParam>builder()
-                .add(new QueryParam(UTorrentWebAPIClientImpl.TOKEN_PARAM_NAME, TOKEN_VALUE))
-                .add(new QueryParam(UTorrentWebAPIClientImpl.LIST_QUERY_PARAM_NAME, "1"))
-                .build();
+        List<QueryParam> queryParamsToCompare = List.of(
+            new QueryParam(UTorrentWebAPIClientImpl.TOKEN_PARAM_NAME, TOKEN_VALUE),
+            new QueryParam(UTorrentWebAPIClientImpl.LIST_QUERY_PARAM_NAME, "1")
+        );
 
         assertThat(requestToValidate.getUri()).isEqualTo(serverURI);
         assertThat(requestToValidate.getParams()).hasSameElementsAs(queryParamsToCompare);
@@ -160,7 +177,7 @@ class UTorrentWebAPIClientImplTest {
         String nameSecondTorrent = "file_2";
         TorrentFileList.File secondTorrent = TorrentFileList.File.builder().name(nameSecondTorrent).build();
         when(restClient.get(any(Request.class))).thenReturn(TOKEN_VALUE);
-        client.getTorrentFiles(ImmutableList.of());
+        client.getTorrentFiles(List.of());
 
         TorrentFileList torrentFileList = new TorrentFileList();
         torrentFileList.addFile(firstTorrent);
@@ -168,14 +185,14 @@ class UTorrentWebAPIClientImplTest {
         torrentFileList.setHash(HASH_1);
         ArgumentCaptor<Request> requestArgumentCaptor = ArgumentCaptor.forClass(Request.class);
         when(restClient.get(requestArgumentCaptor.capture())).thenReturn(HASH_1);
-        when(parser.parseAsTorrentFileList(HASH_1)).thenReturn(ImmutableSet.of(torrentFileList));
+        when(parser.parseAsTorrentFileList(HASH_1)).thenReturn(Set.of(torrentFileList));
 
         Optional<TorrentFileList> result = client.getTorrentFiles(HASH_1);
 
         QueryParam expectedHash = new QueryParam(UTorrentWebAPIClientImpl.HASH_QUERY_PARAM_NAME, HASH_1);
 
         Request actualRequest = requestArgumentCaptor.getValue();
-        validateRequest(Action.GET_FILES, actualRequest, ImmutableList.of(expectedHash));
+        validateRequest(Action.GET_FILES, actualRequest, List.of(expectedHash));
 
         assertThat(result)
             .isPresent()
@@ -187,7 +204,7 @@ class UTorrentWebAPIClientImplTest {
     void testGetTorrentProperties() throws Exception {
         TorrentProperties torrentPropertiesExpected = TorrentProperties.builder().build();
         when(restClient.get(any(Request.class))).thenReturn(TOKEN_VALUE);
-        when(parser.parseAsTorrentProperties(anyString())).thenReturn(ImmutableSet.of(torrentPropertiesExpected));
+        when(parser.parseAsTorrentProperties(anyString())).thenReturn(Set.of(torrentPropertiesExpected));
         client.getTorrentProperties(HASH_1);
 
         ArgumentCaptor<Request> requestArgumentCaptor = ArgumentCaptor.forClass(Request.class);
@@ -195,7 +212,7 @@ class UTorrentWebAPIClientImplTest {
         Optional<TorrentProperties> actualTorrentProperties = client.getTorrentProperties(HASH_1);
 
         Request actualRequest = requestArgumentCaptor.getValue();
-        validateRequest(Action.GET_PROP, actualRequest, ImmutableList.of(new QueryParam(UTorrentWebAPIClientImpl.HASH_QUERY_PARAM_NAME, HASH_1)));
+        validateRequest(Action.GET_PROP, actualRequest, List.of(new QueryParam(UTorrentWebAPIClientImpl.HASH_QUERY_PARAM_NAME, HASH_1)));
 
         assertThat(actualTorrentProperties).isPresent();
         assertThat(actualTorrentProperties.get()).isSameAs(torrentPropertiesExpected);
@@ -268,20 +285,20 @@ class UTorrentWebAPIClientImplTest {
         final Priority priority = Priority.HIGH_PRIORITY;
 
         when(restClient.get(any(Request.class))).thenReturn(TOKEN_VALUE);
-        client.setTorrentFilePriority(HASH_1, priority, ImmutableList.of(1, 2, 3));
+        client.setTorrentFilePriority(HASH_1, priority, List.of(1, 2, 3));
 
         ArgumentCaptor<Request> requestArgumentCaptor = ArgumentCaptor.forClass(Request.class);
         when(restClient.get(requestArgumentCaptor.capture())).thenReturn(BUILD_STRING);
-        RequestResult requestResult = client.setTorrentFilePriority(HASH_1, priority, ImmutableList.of(1, 2, 3));
+        RequestResult requestResult = client.setTorrentFilePriority(HASH_1, priority, List.of(1, 2, 3));
         assertThat(requestResult).isEqualTo(RequestResult.SUCCESS);
 
-        ImmutableList<QueryParam> queryParams = ImmutableList.<QueryParam>builder()
-                .add(new QueryParam(UTorrentWebAPIClientImpl.PRIORITY_QUERY_PARAM_NAME, String.valueOf(priority.getValue())))
-                .add(new QueryParam(UTorrentWebAPIClientImpl.FILE_INDEX_QUERY_PARAM_NAME, String.valueOf(1)))
-                .add(new QueryParam(UTorrentWebAPIClientImpl.FILE_INDEX_QUERY_PARAM_NAME, String.valueOf(2)))
-                .add(new QueryParam(UTorrentWebAPIClientImpl.FILE_INDEX_QUERY_PARAM_NAME, String.valueOf(3)))
-                .add(new QueryParam(UTorrentWebAPIClientImpl.HASH_QUERY_PARAM_NAME, HASH_1))
-                .build();
+        List<QueryParam> queryParams = List.of(
+            new QueryParam(UTorrentWebAPIClientImpl.PRIORITY_QUERY_PARAM_NAME, String.valueOf(priority.getValue())),
+            new QueryParam(UTorrentWebAPIClientImpl.FILE_INDEX_QUERY_PARAM_NAME, String.valueOf(1)),
+            new QueryParam(UTorrentWebAPIClientImpl.FILE_INDEX_QUERY_PARAM_NAME, String.valueOf(2)),
+            new QueryParam(UTorrentWebAPIClientImpl.FILE_INDEX_QUERY_PARAM_NAME, String.valueOf(3)),
+            new QueryParam(UTorrentWebAPIClientImpl.HASH_QUERY_PARAM_NAME, HASH_1)
+        );
 
         Request actualRequest = requestArgumentCaptor.getValue();
 
@@ -304,7 +321,7 @@ class UTorrentWebAPIClientImplTest {
         ClientSettings actualClientSettings = client.getClientSettings();
         assertThat(actualClientSettings).isSameAs(expectedClientSettings);
 
-        validateRequest(Action.GET_SETTINGS, requestArgumentCaptor.getValue(), ImmutableList.of());
+        validateRequest(Action.GET_SETTINGS, requestArgumentCaptor.getValue(), List.of());
     }
 
     @Test
@@ -314,7 +331,7 @@ class UTorrentWebAPIClientImplTest {
 
         ArgumentCaptor<Request> requestArgumentCaptor = ArgumentCaptor.forClass(Request.class);
         when(restClient.get(requestArgumentCaptor.capture())).thenReturn(BUILD_STRING);
-        ImmutableList<QueryParam> setting = ImmutableList.of(new QueryParam(SettingsKey.BOSS_KEY.getKeyValue(), "value"));
+        List<QueryParam> setting = List.of(new QueryParam(SettingsKey.BOSS_KEY.getKeyValue(), "value"));
         RequestResult requestResult = client.setClientSetting(setting);
 
         assertThat(requestResult).isEqualTo(RequestResult.SUCCESS);
@@ -335,23 +352,25 @@ class UTorrentWebAPIClientImplTest {
 
         QueryParam expectedHash = new QueryParam(UTorrentWebAPIClientImpl.HASH_QUERY_PARAM_NAME, HASH_1);
 
-        validateRequest(action, requestArgumentCaptor.getValue(), ImmutableList.of(expectedHash));
+        validateRequest(action, requestArgumentCaptor.getValue(), List.of(expectedHash));
 
         verify(restClient, times(2)).get(any()); //Once to retrieve the token, twice for the actual call
     }
 
     private void validateRequest(Action action, Request requestToValidate, List<QueryParam> queryParams) {
-        validateRequest(action, requestToValidate, queryParams, ImmutableList.of());
+        validateRequest(action, requestToValidate, queryParams, List.of());
     }
 
     private void validateRequest(Action action, Request requestToValidate, List<QueryParam> queryParams, List<FilePart> fileList) {
         assertThat(requestToValidate).isNotNull();
 
-        ImmutableList<QueryParam> queryParamsToCompare = ImmutableList.<QueryParam>builder()
-                .add(new QueryParam(UTorrentWebAPIClientImpl.TOKEN_PARAM_NAME, TOKEN_VALUE))
-                .add(new QueryParam(UTorrentWebAPIClientImpl.ACTION_QUERY_PARAM_NAME, action.getName()))
-                .addAll(queryParams)
-                .build();
+        List<QueryParam> queryParamsToCompare = Stream.concat(
+            Stream.of(
+                new QueryParam(UTorrentWebAPIClientImpl.TOKEN_PARAM_NAME, TOKEN_VALUE),
+                new QueryParam(UTorrentWebAPIClientImpl.ACTION_QUERY_PARAM_NAME, action.getName())
+            ),
+            queryParams.stream()
+        ).collect(Collectors.toList());
 
         assertThat(requestToValidate.getUri()).isEqualTo(serverURI);
         assertThat(requestToValidate.getParams()).hasSameElementsAs(queryParamsToCompare);

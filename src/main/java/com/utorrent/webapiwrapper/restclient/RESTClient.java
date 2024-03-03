@@ -1,10 +1,16 @@
 package com.utorrent.webapiwrapper.restclient;
 
-import com.google.common.base.Throwables;
-import com.utorrent.webapiwrapper.restclient.exceptions.*;
+import com.utorrent.webapiwrapper.restclient.exceptions.BadRequestException;
+import com.utorrent.webapiwrapper.restclient.exceptions.ClientRequestException;
+import com.utorrent.webapiwrapper.restclient.exceptions.ForbiddenException;
+import com.utorrent.webapiwrapper.restclient.exceptions.NotAcceptableException;
+import com.utorrent.webapiwrapper.restclient.exceptions.NotFoundException;
+import com.utorrent.webapiwrapper.restclient.exceptions.RESTException;
+import com.utorrent.webapiwrapper.restclient.exceptions.UnauthorizedException;
 import com.utorrent.webapiwrapper.utils.IOUtils;
-import lombok.*;
-import org.apache.http.*;
+import lombok.Getter;
+import org.apache.http.HeaderElement;
+import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -25,8 +31,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static java.util.Objects.nonNull;
@@ -112,8 +118,8 @@ public class RESTClient implements Closeable {
                     .setUri(uriBuilder.build())
                     .setConfig(requestConfig)
                     .build();
-        } catch (URISyntaxException e) {
-            Throwables.propagate(e);
+        } catch (final URISyntaxException e) {
+            throw new RuntimeException(e);
         }
 
         return executeVerb(httpUriRequest);

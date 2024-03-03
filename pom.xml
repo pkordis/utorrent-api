@@ -12,7 +12,6 @@
         <jdk.version>11</jdk.version>
         <junit.version>5.10.1</junit.version>
         <jersey.version>1.19</jersey.version>
-        <guava.version>18.0</guava.version>
         <gson.version>2.3.1</gson.version>
         <spring-boot-starter-logging.version>3.2.0</spring-boot-starter-logging.version>
         <mockito.version>2.0.2-beta</mockito.version>
@@ -72,11 +71,6 @@
             <artifactId>mockito-core</artifactId>
             <version>5.7.0</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
