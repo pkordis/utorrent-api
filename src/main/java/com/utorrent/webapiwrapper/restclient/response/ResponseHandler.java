@@ -3,7 +3,6 @@ package com.utorrent.webapiwrapper.restclient.response;
 import com.utorrent.webapiwrapper.restclient.exceptions.*;
 import com.utorrent.webapiwrapper.utils.IOUtils;
 import org.apache.hc.core5.http.ClassicHttpResponse;
-import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 
 import java.io.IOException;
