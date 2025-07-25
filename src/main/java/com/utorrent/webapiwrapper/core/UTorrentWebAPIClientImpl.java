@@ -30,6 +30,7 @@ import java.util.function.Function;
 import static com.utorrent.webapiwrapper.core.Action.*;
 import static com.utorrent.webapiwrapper.core.entities.RequestResult.FAIL;
 import static com.utorrent.webapiwrapper.core.entities.RequestResult.SUCCESS;
+import static java.lang.String.format;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
@@ -81,17 +82,21 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
         return authorizationData;
     }
 
-    private <T> T invokeWithAuthentication(RequestBuilder requestBuilder, Function<Request, T> responseSupplier, boolean retryIfAuthFailed) {
+    private <T> T invokeWithAuthentication(
+        final RequestBuilder requestBuilder,
+        final Function<Request, T> responseSupplier,
+        final boolean retryIfAuthFailed
+    ) {
         try {
             final AuthorizationData authData = getAuthorizationData();
             final Request request = requestBuilder
                 .param(new QueryParam(TOKEN_PARAM_NAME, authData.getToken()))
                 .header("Cookie", authData.getGuidCookie())
                 .build();
-            T response = responseSupplier.apply(request);
-            requireNonNull(response, String.format("Received null response from server, request %s", responseSupplier));
+            final T response = responseSupplier.apply(request);
+            requireNonNull(response, format("Received null response from server, request %s", responseSupplier));
             return response;
-        } catch (BadRequestException e) {
+        } catch (final BadRequestException e) {
             setAuthorizationDataExpired();
             if (retryIfAuthFailed) {
                 return invokeWithAuthentication(requestBuilder, responseSupplier, false);
