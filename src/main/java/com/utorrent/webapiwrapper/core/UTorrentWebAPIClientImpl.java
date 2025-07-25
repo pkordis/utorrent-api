@@ -16,6 +16,7 @@ import com.utorrent.webapiwrapper.restclient.Request.QueryParam;
 import com.utorrent.webapiwrapper.restclient.Request.RequestBuilder;
 import com.utorrent.webapiwrapper.restclient.exceptions.BadRequestException;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import static java.lang.String.format;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
     static final String ACTION_QUERY_PARAM_NAME = "action";
     static final String TOKEN_PARAM_NAME = "token";
@@ -62,6 +64,7 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
         this.serverURI = client.getServerURI();
         this.messageParser = messageParser;
         this.torrentsCache = new TorrentsCache();
+        log.info("Initialization of Torrent WebAPIClient for server {} was successful", serverURI);
     }
 
     UTorrentWebAPIClientImpl(
