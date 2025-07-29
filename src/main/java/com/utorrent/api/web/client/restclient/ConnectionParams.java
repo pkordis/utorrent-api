@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Base64;
+
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
@@ -34,9 +36,12 @@ public class ConnectionParams {
     @Getter
     @AllArgsConstructor
     static class Credentials {
-
         private final String username;
         private final String password;
+
+        public String asBasicAuthorization() {
+            return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+        }
     }
 
     public static class ConnectionParamsBuilder {

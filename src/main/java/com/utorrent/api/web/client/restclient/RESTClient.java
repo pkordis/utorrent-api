@@ -37,6 +37,7 @@ public class RESTClient implements Closeable {
     private final HttpClientResponseHandler<String> standardResponseHandler;
     private final CloseableHttpClient client;
     private final HttpClientContext httpClientContext;
+    private final ConnectionParams connectionParams;
     private final URI serverURI;
 
     public RESTClient(
@@ -50,6 +51,7 @@ public class RESTClient implements Closeable {
 
         this.client = client;
         this.serverURI = serverURI;
+        this.connectionParams = params;
 
         this.httpClientContext = HttpClientContext.create();
         if (nonNull(params.getCredentials())) {
@@ -59,7 +61,7 @@ public class RESTClient implements Closeable {
                 new AuthScope(null, -1),
                 new UsernamePasswordCredentials(credentials.getUsername(), credentials.getPassword().toCharArray())
             );
-            httpClientContext.setAttribute(HttpClientContext.CREDS_PROVIDER, credentialsProvider);
+            httpClientContext.setCredentialsProvider(credentialsProvider);
         }
 
         RequestConfig.Builder requestConfigBuilder = RequestConfig.custom()
@@ -71,7 +73,7 @@ public class RESTClient implements Closeable {
                 .setConnectionRequestTimeout(params.getTimeout(), TimeUnit.MILLISECONDS);
         }
 
-        httpClientContext.setAttribute(HttpClientContext.REQUEST_CONFIG, requestConfigBuilder.build());
+        httpClientContext.setRequestConfig(requestConfigBuilder.build());
         this.standardResponseHandler = responseHandler;
     }
 
@@ -133,9 +135,9 @@ public class RESTClient implements Closeable {
     ) {
         try {
             return client.execute(httpRequest, httpClientContext, responseHandler);
-        } catch (ClientRequestException e) {
+        } catch (final ClientRequestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RESTException("Impossible to execute request " + httpRequest.getMethod(), e);
         }
     }
@@ -168,6 +170,7 @@ public class RESTClient implements Closeable {
                     final String token = standardResponseHandler.handleResponse(response).replaceAll("<[^>]*>", "");
                     return new AuthorizationData(token, "GUID=" + guid);
                 } catch (final Exception e) {
+                    e.printStackTrace(System.out);
                     log.error("Response was: " + response, e);
                     throw new UnauthorizedException(401, "Failed to process the Set-Cookie header part of GUID");
                 }

@@ -17,7 +17,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-@Disabled
+//@Disabled
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class LocalUTorrentWebAPIClientImplTest {
     private static UTorrentWebAPIClient CLIENT;
@@ -60,7 +60,11 @@ class LocalUTorrentWebAPIClientImplTest {
     @Order(1)
     @Test
     void shouldGetAllTorrentsListed() {
-        Set<Torrent> allTorrents = CLIENT.getAllTorrents();
+        // Execute
+        final Set<Torrent> allTorrents = CLIENT.getAllTorrents();
+
+        // Verify
+        assertThat(allTorrents).isNotNull();
     }
 
     @Order(2)
