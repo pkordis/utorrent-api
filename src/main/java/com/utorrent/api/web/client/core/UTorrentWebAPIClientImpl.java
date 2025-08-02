@@ -15,6 +15,7 @@ import com.utorrent.api.web.client.restclient.Request.FilePart;
 import com.utorrent.api.web.client.restclient.Request.QueryParam;
 import com.utorrent.api.web.client.restclient.Request.RequestBuilder;
 import com.utorrent.api.web.client.restclient.exceptions.BadRequestException;
+import com.utorrent.api.web.client.restclient.exceptions.UnauthorizedException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,20 +48,18 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
     static final String PRIORITY_QUERY_PARAM_NAME = "p";
     static final String TORRENT_FILE_PART_NAME = "torrent_file";
 
-    private final RESTClient client;
     private final TorrentsCache torrentsCache;
+    private final MessageParser messageParser;
     private final URI serverURI;
 
-    private final MessageParser messageParser;
-
     private AuthorizationData authorizationData;
+    private RESTClient client;
 
-    @SneakyThrows
     UTorrentWebAPIClientImpl(
         final ConnectionParams connectionParams,
         final MessageParser messageParser
     ) {
-        this.client = new RESTClient(connectionParams);
+        resetRestClient(connectionParams);
         this.serverURI = client.getServerURI();
         this.messageParser = messageParser;
         this.torrentsCache = new TorrentsCache();
@@ -80,9 +79,25 @@ class UTorrentWebAPIClientImpl implements UTorrentWebAPIClient {
     private AuthorizationData getAuthorizationData() {
         if (authorizationData == null) {
             authorizationData = client.authenticate();
-            requireNonNull(authorizationData, "Authentication failed");
+            log.info("AuthorizationData: {} ", authorizationData);
+
+            if (authorizationData.getStatus() == AuthorizationData.Status.EXPIRED) {
+                log.warn("Session has expired. Resetting client...");
+                resetRestClient(client.getConnectionParams());
+                authorizationData = client.authenticate();
+                log.info("AuthorizationData after authentication with client reset: {} ", authorizationData);
+
+                if (authorizationData.getStatus() != AuthorizationData.Status.OK) {
+                    throw new UnauthorizedException(401, "Failed to process the Set-Cookie header part of GUID");
+                }
+            }
         }
         return authorizationData;
+    }
+
+    @SneakyThrows
+    void resetRestClient(final ConnectionParams connectionParams) {
+        client = new RESTClient(connectionParams);
     }
 
     private <T> T invokeWithAuthentication(

@@ -12,7 +12,6 @@ import static java.util.Objects.requireNonNull;
 @Getter
 @Setter
 public class ConnectionParams {
-
     private int port;
     private String host;
     private String scheme;

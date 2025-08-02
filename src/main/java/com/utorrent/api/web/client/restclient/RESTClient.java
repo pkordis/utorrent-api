@@ -2,7 +2,6 @@ package com.utorrent.api.web.client.restclient;
 
 import com.utorrent.api.web.client.restclient.exceptions.ClientRequestException;
 import com.utorrent.api.web.client.restclient.exceptions.RESTException;
-import com.utorrent.api.web.client.restclient.exceptions.UnauthorizedException;
 import com.utorrent.api.web.client.restclient.response.ResponseHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -168,11 +167,11 @@ public class RESTClient implements Closeable {
                         .findFirst()
                         .orElse(null);
                     final String token = standardResponseHandler.handleResponse(response).replaceAll("<[^>]*>", "");
-                    return new AuthorizationData(token, "GUID=" + guid);
+                    return new AuthorizationData(token, "GUID=" + guid, AuthorizationData.Status.OK);
                 } catch (final Exception e) {
-                    e.printStackTrace(System.out);
-                    log.error("Response was: " + response, e);
-                    throw new UnauthorizedException(401, "Failed to process the Set-Cookie header part of GUID");
+                    log.error("Response was: {}", response);
+                    log.error(e.getMessage(), e);
+                    return new AuthorizationData(null, null, AuthorizationData.Status.INVALID);
                 }
             }
         );

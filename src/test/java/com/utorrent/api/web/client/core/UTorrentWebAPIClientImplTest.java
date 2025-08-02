@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -73,7 +74,7 @@ class UTorrentWebAPIClientImplTest {
 
         when(restClient.getServerURI()).thenReturn(serverURI);
         client = new UTorrentWebAPIClientImpl(parser, restClient);
-        final AuthorizationData authorizationData = new AuthorizationData(TOKEN_VALUE, "GUID");
+        final AuthorizationData authorizationData = new AuthorizationData(TOKEN_VALUE, "GUID", AuthorizationData.Status.OK);
         when(restClient.authenticate()).thenReturn(authorizationData);
     }
 
